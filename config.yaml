@@ -1,0 +1,20 @@
+ezr:
+  - host: EZR01A3AF.lan
+    name: EG
+    prefix: eg
+  - host: EZR01A4D1.lan
+    name: OG1
+    prefix: og1
+  - host: EZR01A4CF.lan
+    name: OG2
+    prefix: og2
+
+mqtt:
+  host: domoticz.lan
+  port: 1883
+  debug: true
+  discovery_prefix: homeassistant
+  topic: alpha2
+  
+general:
+  interval: 60
