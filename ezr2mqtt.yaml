@@ -12,7 +12,9 @@ ezr:
 mqtt:
   host: domoticz.lan
   port: 1883
-  debug: true
+  debug: false
+  username: ezr2mqtt
+  password: 
   discovery_prefix: homeassistant
   topic: alpha2
   

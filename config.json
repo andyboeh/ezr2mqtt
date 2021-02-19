@@ -1,0 +1,13 @@
+{
+    "name": "EZR to MQTT",
+    "version": "0.1",
+    "slug": "ezr2mqtt",
+    "description": "Homeassistant interface to Möhlenhoff Alpha2 floor heating controller",
+    "arch": ["aarch64", "amd64", "armhf", "armv7", "i386"],
+    "startup": "application",
+	"services": ["mqtt:need"],
+    "boot": "auto",
+    "map" : ["config"],
+    "options": { },
+    "schema": {	}
+}
