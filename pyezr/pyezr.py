@@ -14,6 +14,7 @@ class pyezr():
         self.objects['heatctrls'] = []
         self.objects['iodevices'] = []
         self.id = ""
+        self.coolingMode = False
         
     def refresh(self):
         self.connect()
@@ -60,6 +61,8 @@ class pyezr():
         self.id = device.find('ID').text
         name = device.find('NAME').text
         
+        self.parseCoolingMode(device)
+        
         self.objects['heatareas'].clear()
         heatareas = device.findall('HEATAREA')
         for heatarea in heatareas:
@@ -78,6 +81,15 @@ class pyezr():
         self.map()
         
         return True
+        
+    def parseCoolingMode(self, xml):
+        if xml.find('COOLING').text == '1':
+            self.coolingMode = True
+        else:
+            self.coolingMode = False
+        
+    def getCoolingMode(self):
+        return self.coolingMode
         
     def createVirtualRoom(self, zone):
         devices = ElementTree.Element('Devices')

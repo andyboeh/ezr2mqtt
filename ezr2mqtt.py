@@ -23,6 +23,7 @@ else:
     sys.exit(1)
 
 commandlist = []
+firsttime = True
 
 class EzrSetTemperatureCommand:
     def __init__(self, ezr, heatarea, target):
@@ -98,6 +99,8 @@ def get_ezr_data():
             result[dev] = {}
         result[dev]['name'] = config['ezr'][ii]['name']
         result[dev]['id'] = config['ezr'][ii]['prefix']
+        result[dev]['cooling'] = ezr.getCoolingMode()
+
         try:
             if ezr.connect():
                 result[dev]['status'] = 'ok'
@@ -120,6 +123,16 @@ def get_ezr_data():
             result[dev][ha_name]['actual_temperature'] = ha.getActualTemperature()
             result[dev][ha_name]['target_temperature'] = ha.getTargetTemperature()
             result[dev][ha_name]['mode'] = ha.getMode()
+            ctrls = ha.getHeatCtrls()
+            result[dev][ha_name]['ctrls'] = []
+            for ctrl in ctrls:
+                ctrlDic = {}
+                ctrlDic['number'] = ctrl.getNumber()
+                ctrlDic['inuse'] = ctrl.getInUse()
+                ctrlDic['state'] = ctrl.getState()
+                ctrlDic['percent'] = ctrl.getActorPercent()
+                result[dev][ha_name]['ctrls'].append(ctrlDic)
+                
             ha_names.append(ha_name)
         result[dev]['heatareas'] = ha_names
 
@@ -147,6 +160,109 @@ def get_ezr_data():
                             save = False
                         commandlist.remove(command)
     return result
+
+def isAreaActive(ctrls):
+    active = False
+    for ctrl in ctrls:
+        if ctrl['state'] == '1' and int(ctrl['percent']) > 0:
+            active = True
+    return active
+
+def publishHeatareaData(config, data, dev, heatarea):
+    identifier = data[dev]['id'] + '_' + data[dev][heatarea]['number']
+    dtopic = config['mqtt']['discovery_prefix'] + '/climate/' + \
+             identifier + '/config'
+    topic = config['mqtt']['topic'] + '/' + identifier
+    name = heatarea
+    mqttc.publish(topic + "/current_temperature", payload=data[dev][heatarea]['actual_temperature'], retain=True)
+    mqttc.publish(topic + "/target_temperature", payload=data[dev][heatarea]['target_temperature'], retain=True)
+    mode = data[dev][heatarea]['mode']
+
+    if isAreaActive(data[dev][heatarea]['ctrls']):
+        if data[dev]['cooling']:
+            pmode = '\"cool\"'
+        else:
+            pmode = '\"heat\"'
+    else:
+        pmode = '\"auto\"'
+    hmode = '\"auto\"'
+    if mode == '0':
+        hmode = '\"auto\"'
+    elif mode == '1':
+        hmode = '\"day\"'
+    elif mode == '2':
+        hmode = '\"night\"'
+    elif mode == '3':
+        hmode = '\"auto\"'
+        pmode = '\"off\"'
+    mqttc.publish(topic + "/mode", payload=pmode, retain=True)
+    mqttc.publish(topic + "/hold_state", payload=hmode, retain=True)
+    
+    if firsttime:
+        payload = {
+            "current_temperature_topic" : topic + "/current_temperature",
+            "name" : name,
+            "temperature_command_topic" : topic + "/set_temperature",
+            "temperature_state_topic" : topic + "/target_temperature",
+            "temperature_unit" : "C",
+            "temp_step" : 0.1,
+            "max_temp" : data[dev][heatarea]['max_temperature'],
+            "min_temp" : data[dev][heatarea]['min_temperature'],
+            "modes" : [
+                "auto",
+                "cool",
+                "heat",
+                "off",
+            ],
+            "mode_state_topic" : topic + "/mode",
+            "mode_state_template" : "{{ value_json }}",
+            "hold_command_topic" : topic + "/set_hold",
+            "hold_state_topic" : topic + "/hold_state",
+            "hold_state_template" : "{{ value_json }}",
+            "hold_modes" : [
+                "auto",
+                "day",
+                "night",
+            ],
+            "unique_id" : identifier,
+            "precision" : 0.1,
+            "value_template" : "{{ value_json }}",
+            "device" : {
+                "identifiers" : data[dev]['id'],
+                "manufacturer" : "Möhlenhoff",
+                "model" : "Alpha 2",
+                "name" : data[dev]['name'],
+            },
+        }
+        payload = json.dumps(payload)
+        mqttc.subscribe(topic + "/set_temperature")
+        mqttc.subscribe(topic + "/set_hold")
+        mqttc.publish(dtopic, payload=payload, retain=True)
+
+def publishControlData(config, data, dev, ctrl):
+    identifier = data[dev]['id'] + '_actor_' + ctrl['number']
+    dtopic = config['mqtt']['discovery_prefix'] + '/sensor/' + \
+             identifier + '/config'
+    topic = config['mqtt']['topic'] + '/' + identifier
+    name = 'Actor ' + ctrl['number'] + ' (' + data[dev]['name'] + ')'
+    mqttc.publish(topic + "/state", payload=ctrl['percent'], retain=True)
+    
+    if firsttime:
+        payload = {
+            "unique_id" : identifier,
+            "value_template" : "{{ value_json }}",
+            "unit_of_measurement" : "%",
+            "state_topic" : topic + "/state",
+            "name" : name,
+            "device" : {
+                "identifiers" : data[dev]['id'],
+                "manufacturer" : "Möhlenhoff",
+                "model" : "Alpha 2",
+                "name" : data[dev]['name'],
+            },
+        }
+        payload = json.dumps(payload)
+        mqttc.publish(dtopic, payload=payload, retain=True)
 
 # Setup MQTT connection
 mqttc = mqtt.Client()
@@ -182,72 +298,9 @@ while True:
         if data[dev]['status'] == 'ok':
             heatareas = data[dev]['heatareas']
             for heatarea in heatareas:
-                identifier = data[dev]['id'] + '_' + data[dev][heatarea]['number']
-                dtopic = config['mqtt']['discovery_prefix'] + '/climate/' + \
-                         identifier + '/config'
-                topic = config['mqtt']['topic'] + '/' + identifier
-                name = heatarea
-                mqttc.publish(topic + "/current_temperature", payload=data[dev][heatarea]['actual_temperature'], retain=True)
-                mqttc.publish(topic + "/target_temperature", payload=data[dev][heatarea]['target_temperature'], retain=True)
-                mode = data[dev][heatarea]['mode']
-                # 1 is actually day, 2 is actually night, but this is not
-                # supported by Home Assistant
-                pmode = '\"off\"'
-                hmode = '\"auto\"'
-                if mode == '0':
-                    hmode = '\"auto\"'
-                    pmode = '\"auto\"'
-                elif mode == '1':
-                    hmode = '\"day\"'
-                    pmode = '\"auto\"'
-                elif mode == '2':
-                    hmode = '\"night\"'
-                    pmode = '\"auto\"'
-                elif mode == '3':
-                    hmode = '\"auto\"'
-                    pmode = '\"off\"'
-                mqttc.publish(topic + "/mode", payload=pmode, retain=True)
-                mqttc.publish(topic + "/hold_state", payload=hmode, retain=True)
-                
-                
-                if firsttime:
-                    payload = {
-                        "current_temperature_topic" : topic + "/current_temperature",
-                        "name" : name,
-                        "temperature_command_topic" : topic + "/set_temperature",
-                        "temperature_state_topic" : topic + "/target_temperature",
-                        "temperature_unit" : "C",
-                        "temp_step" : 0.1,
-                        "max_temp" : data[dev][heatarea]['max_temperature'],
-                        "min_temp" : data[dev][heatarea]['min_temperature'],
-                        "modes" : [
-                            "auto",
-                            "off",
-                        ],
-                        "mode_state_topic" : topic + "/mode",
-                        "mode_state_template" : "{{ value_json }}",
-                        "hold_command_topic" : topic + "/set_hold",
-                        "hold_state_topic" : topic + "/hold_state",
-                        "hold_state_template" : "{{ value_json }}",
-                        "hold_modes" : [
-                            "auto",
-                            "day",
-                            "night",
-                        ],
-                        "unique_id" : identifier,
-                        "precision" : 0.1,
-                        "value_template" : "{{ value_json }}",
-                        "device" : {
-                            "identifiers" : data[dev]['id'],
-                            "manufacturer" : "Möhlenhoff",
-                            "model" : "Alpha 2",
-                            "name" : data[dev]['name'],
-                        },
-                    }
-                    payload = json.dumps(payload)
-                    mqttc.subscribe(topic + "/set_temperature")
-                    mqttc.subscribe(topic + "/set_hold")
-                    mqttc.publish(dtopic, payload=payload, retain=True)
+                publishHeatareaData(config, data, dev, heatarea)
+                for ctrl in data[dev][heatarea]['ctrls']:
+                    publishControlData(config, data, dev, ctrl)
 
     firsttime = False
     if config['mqtt']['debug']:
