@@ -23,7 +23,7 @@ class HeatCtrl():
         
     def getActorPercent(self):
         actor = self.xml.find('ACTOR_PERCENT')
-        if actor:
+        if actor is not None:
             return actor.text
         else:
             if self.getState() == '0':

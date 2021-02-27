@@ -239,12 +239,12 @@ def publishHeatareaData(config, data, dev, heatarea):
         mqttc.subscribe(topic + "/set_hold")
         mqttc.publish(dtopic, payload=payload, retain=True)
 
-def publishControlData(config, data, dev, ctrl):
+def publishControlData(config, data, dev, ctrl, heatarea):
     identifier = data[dev]['id'] + '_actor_' + ctrl['number']
     dtopic = config['mqtt']['discovery_prefix'] + '/sensor/' + \
              identifier + '/config'
     topic = config['mqtt']['topic'] + '/' + identifier
-    name = 'Actor ' + ctrl['number'] + ' (' + data[dev]['name'] + ')'
+    name = 'Actor ' + ctrl['number'] + ' (' + data[dev]['name'] + ' - ' + heatarea + ')'
     mqttc.publish(topic + "/state", payload=ctrl['percent'], retain=True)
     
     if firsttime:
@@ -298,7 +298,7 @@ while True:
             for heatarea in heatareas:
                 publishHeatareaData(config, data, dev, heatarea)
                 for ctrl in data[dev][heatarea]['ctrls']:
-                    publishControlData(config, data, dev, ctrl)
+                    publishControlData(config, data, dev, ctrl, heatarea)
 
     firsttime = False
     if config['mqtt']['debug']:
