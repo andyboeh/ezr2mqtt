@@ -285,8 +285,6 @@ mqttc.loop_start()
 
 # Set up discovery structure
 
-firsttime = True
-
 while True:
     if config['mqtt']['debug']:
         print('Poll...')
