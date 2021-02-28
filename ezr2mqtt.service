@@ -1,0 +1,15 @@
+[Unit]
+Description=ezr2mqtt
+After=network.target
+
+[Service]
+User=ezr2mqtt
+Group=ezr2mqtt
+WorkingDirectory=/opt/ezr2mqtt
+Type=simple
+ExecStart=/opt/ezr2mqtt/ezr2mqtt.py
+Restart=always
+TimeoutStopSec=30
+
+[Install]
+WantedBy=mult-user.target

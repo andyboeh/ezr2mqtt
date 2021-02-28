@@ -1,0 +1,14 @@
+post_install() {
+  # Create user
+  systemd-sysusers ezr2mqtt.conf
+  chown -R ezr2mqtt:ezr2mqtt /opt/ezr2mqtt
+}
+
+post_upgrade() {
+  systemctl daemon-reload
+}
+
+post_remove() {
+  systemctl stop ezr2mqtt.service
+  true
+}
