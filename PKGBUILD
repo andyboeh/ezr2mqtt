@@ -1,5 +1,5 @@
 pkgname=ezr2mqtt-git
-pkgver=r8.fe7be27
+pkgver=r9.b85d0b2
 pkgrel=1
 pkgdesc="Simple Möhlenhoff Alpha 2 (EZR) to MQTT bridge"
 arch=('any')
@@ -10,15 +10,13 @@ install='ezr2mqtt.install'
 source=('ezr2mqtt-git::git+https://github.com/andyboeh/ezr2mqtt.git'
         'ezr2mqtt.install'
         'ezr2mqtt.sysusers'
-        'ezr2mqtt.service'
-        'ezr2mqtt.yaml')
+        'ezr2mqtt.service')
 provides=('ezr2mqtt')
 conflicts=('ezr2mqtt')
-sha256sums=('SKIP' 
-            'SKIP'
-            'SKIP'
-            'SKIP'
-            'SKIP')
+sha256sums=('SKIP'
+            '5aa2d0f64b931631332384a59db877757ab44d9a16412476d135e29e09c4e640'
+            '1b289feebb0b594fd82a52fdfa213e82a42295dba1b3dc92602bd42e6d2ee5f6'
+            '61287696d15c86aad82b72d659f2d973f7b1050ea73ce8ccb6ba470134758d79')
 backup=('opt/ezr2mqtt/ezr2mqtt.yaml')
 
 pkgver() {
@@ -33,5 +31,5 @@ package() {
   cp -R pyezr "${pkgdir}/opt/ezr2mqtt/"
   install -Dm644 "${srcdir}/ezr2mqtt.service" "${pkgdir}/usr/lib/systemd/system/ezr2mqtt.service"
   install -Dm644 "${srcdir}/ezr2mqtt.sysusers" "${pkgdir}/usr/lib/sysusers.d/ezr2mqtt.conf"
-  install -Dm644 "${srcdir}/ezr2mqtt.yaml" "${pkgdir}/opt/ezr2mqtt/ezr2mqtt.yaml"
+  install -Dm644 ezr2mqtt.yaml "${pkgdir}/opt/ezr2mqtt/ezr2mqtt.yaml"
 }
