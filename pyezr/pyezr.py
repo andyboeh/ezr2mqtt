@@ -83,7 +83,7 @@ class pyezr():
         return True
         
     def parseCoolingMode(self, xml):
-        if xml.find('COOLING').text == '1':
+        if xml.find('COOLING').text == '1' or xml.find('CHANGEOVER').text == '1':
             self.coolingMode = True
         else:
             self.coolingMode = False
