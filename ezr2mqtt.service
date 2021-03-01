@@ -1,6 +1,7 @@
 [Unit]
 Description=ezr2mqtt
 After=network.target
+StartLimitIntervalSec=0
 
 [Service]
 User=ezr2mqtt
@@ -9,6 +10,7 @@ WorkingDirectory=/opt/ezr2mqtt
 Type=simple
 ExecStart=/opt/ezr2mqtt/ezr2mqtt.py
 Restart=always
+RestartSec=10
 TimeoutStopSec=30
 
 [Install]
