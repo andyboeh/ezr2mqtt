@@ -99,7 +99,6 @@ def get_ezr_data():
             result[dev] = {}
         result[dev]['name'] = config['ezr'][ii]['name']
         result[dev]['id'] = config['ezr'][ii]['prefix']
-        result[dev]['cooling'] = ezr.getCoolingMode()
 
         try:
             if ezr.connect():
@@ -111,6 +110,7 @@ def get_ezr_data():
             result[dev]['status'] = 'error'
             continue
 
+        result[dev]['cooling'] = ezr.getCoolingMode()
         heatareas = ezr.getHeatAreas()
 
         ha_names = []
