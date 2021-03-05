@@ -8,6 +8,7 @@ User=ezr2mqtt
 Group=ezr2mqtt
 WorkingDirectory=/opt/ezr2mqtt
 Type=simple
+Environment="PYTHONUNBUFFERED=1"
 ExecStart=/opt/ezr2mqtt/ezr2mqtt.py
 Restart=always
 RestartSec=10
