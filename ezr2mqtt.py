@@ -15,9 +15,11 @@ from threading import Thread
 if os.path.exists('/config/ezr2mqtt.yaml'):
     fp = open('/config/ezr2mqtt.yaml', 'r')
     config = yaml.safe_load(fp)
+    fp.close()
 elif os.path.exists('ezr2mqtt.yaml'):
     fp = open('ezr2mqtt.yaml', 'r')
     config = yaml.safe_load(fp)
+    fp.close()
 else:
     print('Configuration file not found, exiting.')
     sys.exit(1)
