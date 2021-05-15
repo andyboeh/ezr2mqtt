@@ -25,7 +25,8 @@ else:
     sys.exit(1)
 
 commandlist = []
-firsttime = True
+firsttime = False
+subscribe = False
 
 class EzrSetTemperatureCommand:
     def __init__(self, ezr, heatarea, target):
@@ -49,7 +50,10 @@ def on_connect(client, userdata, flags, rc):
         4: "bad username or password",
         5: "not authorised"
     }
-    print("MQTT: " + connect_statuses.get(rc, "Unknown error"))
+    if rc != 0:
+        print("MQTT: " + connect_statuses.get(rc, "Unknown error"))
+    else:
+        subscribe = True
 
 def on_disconnect(client, userdata, rc):
     if rc != 0:
@@ -285,7 +289,11 @@ mqttc.connect(config['mqtt']['host'], config['mqtt']['port'], 60)
 mqttc.loop_start()
 
 
-# Set up discovery structure
+# on_connect sets subscribe to True
+# This sets firsttime to True, so that the control structure is published.
+# We can't publish in on_connect b/c we need to poll the Alpha2 first.
+# Two variables are necessary b/c on_connect is async and we could end
+# up with a partial discovery structure.
 
 while True:
     if config['mqtt']['debug']:
@@ -293,6 +301,10 @@ while True:
     data = get_ezr_data()
     if config['mqtt']['debug']:
         print(data)
+
+    if subscribe:
+        firsttime = True
+        subscribe = False
 
     for dev in data:
         if data[dev]['status'] == 'ok':
