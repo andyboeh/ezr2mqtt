@@ -16,7 +16,7 @@ conflicts=('ezr2mqtt')
 sha256sums=('SKIP'
             '5aa2d0f64b931631332384a59db877757ab44d9a16412476d135e29e09c4e640'
             '1b289feebb0b594fd82a52fdfa213e82a42295dba1b3dc92602bd42e6d2ee5f6'
-            '61287696d15c86aad82b72d659f2d973f7b1050ea73ce8ccb6ba470134758d79')
+            'ea38e28ad1e98c0bf4ed530de24972ed73bd327438b0a167553b5838581611f8')
 backup=('opt/ezr2mqtt/ezr2mqtt.yaml')
 
 pkgver() {
