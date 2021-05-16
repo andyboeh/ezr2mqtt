@@ -42,6 +42,8 @@ class EzrSetHoldStateCommand:
 
 # Define MQTT event callbacks
 def on_connect(client, userdata, flags, rc):
+    global subscribe
+
     connect_statuses = {
         0: "Connected",
         1: "incorrect protocol version",
